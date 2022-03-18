@@ -1,0 +1,180 @@
+## Using detectRUNS 0.9.6
+# clear workplace
+rm(list =ls())
+
+install.packages("detectRUNS")
+
+library(detectRUNS)
+
+
+#Extraer archivos ped y map documentos RUTA > R > win.library > 4.1> detectRUNS > extdata
+
+genotypeFilePath <- system.file(
+  "extdata", "criolloQC.ped", package="detectRUNS")
+
+mapFilePath <- system.file(
+  "extdata", "criolloQC.map", package="detectRUNS")
+
+#sliding-window-based run detection
+## The function slidingRUNS.run() accepts in input several parameters: besides the paths 
+##(or names) of ped/map files, there are parameters related to the sliding window and 
+##parameters related to the genomic run
+
+slidingRuns <- slidingRUNS.run(
+  genotypeFile = genotypeFilePath, 
+  mapFile = mapFilePath, 
+  windowSize = 15, 
+  threshold = 0.05,
+  minSNP = 20, 
+  ROHet = FALSE, 
+  maxOppWindow = 1, 
+  maxMissWindow = 1,
+  maxGap = 10^6, 
+  minLengthBps = 250000, 
+  minDensity = 1/10^3, # SNP/kbps
+  maxOppRun = NULL,
+  maxMissRun = NULL
+) 
+
+#consecutive SNP-based run detection
+##The function consecutiveRUNS.run() has a similar structure, obviously without the 
+##sliding-window parameters.
+
+consecutiveRuns <- consecutiveRUNS.run(
+  genotypeFile =genotypeFilePath,
+  mapFile = mapFilePath,
+  minSNP = 20,
+  ROHet = FALSE,
+  maxGap = 10^6,
+  minLengthBps = 250000,
+  maxOppRun = 1,
+  maxMissRun = 1
+)
+
+# "Runs of heterozygosity" (a.k.a. heterozygosity-rich regions)
+##By setting ROHet=TRUE, runs of heterozygosity (a.k.a. heterozygosity-rich genomic regions) 
+##are detected instead. Again, the usert can choose whether to use the sliding-window or the 
+##consecutive method.
+
+slidingRuns_het <- slidingRUNS.run(
+  genotypeFile = genotypeFilePath, 
+  mapFile = mapFilePath, 
+  windowSize = 10, 
+  threshold = 0.05,
+  minSNP = 10, 
+  ROHet = TRUE, 
+  maxOppWindow = 2, 
+  maxMissWindow = 1,
+  maxGap = 10^6, 
+  minLengthBps = 10000, 
+  minDensity = 1/10^6, # SNP/kbps
+  maxOppRun = NULL,
+  maxMissRun = NULL
+) 
+
+consecutiveRuns_het <- consecutiveRUNS.run(
+  genotypeFile =genotypeFilePath,
+  mapFile = mapFilePath,
+  minSNP = 10,
+  ROHet = TRUE,
+  maxGap = 10^6,
+  minLengthBps = 10000,
+  maxOppRun = 2,
+  maxMissRun = 1
+)
+
+#Summary statistics on detected runs
+##The function summaryRuns() takes in input the dataframe with results from runs 
+##detection and calculates a number of basic descriptive statistics on runs. Additional 
+##necessary parameters are the paths to the Plink ped and map files. Class and snpInRuns 
+##are optional arguments.
+
+
+summaryList <- summaryRuns(
+  runs = slidingRuns, mapFile = mapFilePath, genotypeFile = genotypeFilePath, 
+  Class =6 , snpInRuns = TRUE)
+
+
+head(summaryList$SNPinRun)
+
+plot_Runs(runs = slidingRuns)
+plot_StackedRuns(runs = slidingRuns)
+
+plot_SnpsInRuns(
+  runs = slidingRuns[slidingRuns$chrom==2,], genotypeFile = genotypeFilePath, 
+  mapFile = mapFilePath)
+
+plot_SnpsInRuns(
+  runs = slidingRuns[slidingRuns$chrom==24,], genotypeFile = genotypeFilePath, 
+  mapFile = mapFilePath)
+
+topRuns <- tableRuns(
+  runs =  slidingRuns, genotypeFile = genotypeFilePath, mapFile = mapFilePath, 
+  threshold = 0.5)
+
+plot_manhattanRuns(
+  runs = slidingRuns[slidingRuns$group=="GUY",], 
+  genotypeFile = genotypeFilePath, mapFile = mapFilePath)
+
+# getting map and ped paths
+
+genotypeFilePath <- system.file(
+  "extdata", "criolloQC.ped", package="detectRUNS")
+
+mapFilePath <- system.file(
+  "extdata", "criolloQC.map", package="detectRUNS")
+
+# calculating runs of Homozygosity
+## Not run: 
+# skipping runs calculation
+slidingRuns_het <- slidingRUNS.run(
+  genotypeFile = genotypeFilePath, 
+  mapFile = mapFilePath, 
+  windowSize = 10, 
+  threshold = 0.05,
+  minSNP = 10, 
+  ROHet = FALSE, 
+  maxOppWindow = 2, 
+  maxMissWindow = 1,
+  maxGap = 10^6, 
+  minLengthBps = 10000, 
+  minDensity = 1/10^6, # SNP/kbps
+  maxOppRun = NULL,
+  maxMissRun = NULL
+) 
+
+consecutiveRuns_het <- consecutiveRUNS.run(
+  genotypeFile =genotypeFilePath,
+  mapFile = mapFilePath,
+  minSNP = 10,
+  ROHet = FALSE,
+  maxGap = 10^6,
+  minLengthBps = 10000,
+  maxOppRun = 2,
+  maxMissRun = 1
+)
+
+#EXPORTAR TABLA EN EXCEL CSV DE ARCHIVOS GENERADOS
+library(openxlsx)
+sliding.criollo <- slidingRuns
+
+write.xlsx(sliding.criollo, "sliding.criollo.xlsx")
+
+write.xlsx(sliding.criollo, "sliding.criollo_tabla.xlsx", as.table=TRUE)
+
+
+
+
+
+## End(Not run)
+# loading pre-calculated data
+runsFile <- system.file("extdata", "sliding.criollo.csv", package="detectRUNS")
+runsDF <- readExternalRuns(inputFile = runsFile, program = 'detectRUNS')
+
+plot_InbreedingChr(runs = runsDF, mapFile = mapFile, style='All')
+
+
+
+
+
+
