@@ -154,25 +154,24 @@ consecutiveRuns_het <- consecutiveRUNS.run(
   maxMissRun = 1
 )
 
-#EXPORTAR TABLA EN EXCEL CSV DE ARCHIVOS GENERADOS
+## End(Not run)
+# loading pre-calculated data
+runsFile <- system.file("extdata", "sliding.criollo.csv", package="detectRUNS")
+runsDF <- readExternalRuns(inputFile = runsFile, program = 'detectRUNS')
+
+#Graficar "ChrBarPlot", "ChrBoxPlot" o "FrohBoxPlot"
+plot_InbreedingChr(runs = runsDF, mapFile = mapFilePath, style='ALL')
+
+#TABULACION DE FROH POR CROMOSOMA Y POR INDIVIDUO
+Froh_inbreeding(runs =runsDF, mapFile=mapFilePath, genome_wide = FALSE)
+
+#EXPORTACION A TABLA XLSX
 library(openxlsx)
 sliding.criollo <- slidingRuns
 
 write.xlsx(sliding.criollo, "sliding.criollo.xlsx")
 
 write.xlsx(sliding.criollo, "sliding.criollo_tabla.xlsx", as.table=TRUE)
-
-
-
-
-
-## End(Not run)
-# loading pre-calculated data
-runsFile <- system.file("extdata", "sliding.criollo.csv", package="detectRUNS")
-runsDF <- readExternalRuns(inputFile = runsFile, program = 'detectRUNS')
-
-plot_InbreedingChr(runs = runsDF, mapFile = mapFile, style='All')
-
 
 
 
