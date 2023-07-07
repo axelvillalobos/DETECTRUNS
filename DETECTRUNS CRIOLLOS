@@ -7,13 +7,13 @@ install.packages("detectRUNS")
 library(detectRUNS)
 
 
-#Extraer archivos ped y map documentos RUTA > R > win.library > 4.1> detectRUNS > extdata
+#Exportar Mantener los archivos localmente usando la direccion del mismo
+#Estos Archivos ped y map fueron sometidos a control de calidad desde su archivo
+#original 
 
-genotypeFilePath <- system.file(
-  "extdata", "criolloQC.ped", package="detectRUNS")
+genotypeFilePath <- file.path("C:/Users/villa/OneDrive/Documents/PLINK10K/DETECTRUNS/criolloQC.ped")
 
-mapFilePath <- system.file(
-  "extdata", "criolloQC.map", package="detectRUNS")
+mapFilePath <- file.path("C:/Users/villa/OneDrive/Documents/PLINK10K/DETECTRUNS","CriolloQC.map")
 
 #sliding-window-based run detection
 ## The function slidingRUNS.run() accepts in input several parameters: besides the paths 
