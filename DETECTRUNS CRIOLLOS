@@ -1,4 +1,4 @@
-## Using detectRUNS 0.9.6
+### Using detectRUNS 0.9.6
 # clear workplace
 rm(list =ls())
 
@@ -7,10 +7,9 @@ install.packages("detectRUNS")
 library(detectRUNS)
 
 
-#Exportar Mantener los archivos localmente usando la direccion del mismo
+#Exportar Mantenern los archivos localmente usando la direccion del mismo
 #Estos Archivos ped y map fueron sometidos a control de calidad desde su archivo
 #original 
-
 genotypeFilePath <- file.path("C:/Users/villa/OneDrive/Documents/PLINK10K/DETECTRUNS/criolloQC.ped")
 
 mapFilePath <- file.path("C:/Users/villa/OneDrive/Documents/PLINK10K/DETECTRUNS","CriolloQC.map")
@@ -35,6 +34,12 @@ slidingRuns <- slidingRUNS.run(
   maxOppRun = NULL,
   maxMissRun = NULL
 ) 
+
+#Exportar tabla ROHom
+library(openxlsx)
+ROHom <- slidingRuns
+write.xlsx(ROHom, "ROHom1.xlsx")
+write.xlsx(ROHom, "ROHom_tabla1.xlsx", as.table=TRUE)
 
 #consecutive SNP-based run detection
 ##The function consecutiveRUNS.run() has a similar structure, obviously without the 
@@ -72,11 +77,17 @@ slidingRuns_het <- slidingRUNS.run(
   maxMissRun = NULL
 ) 
 
+#Exportar tabla ROHet
+library(openxlsx)
+ROHet <- slidingRuns_het
+write.xlsx(ROHet, "ROHet.xlsx")
+write.xlsx(ROHet, "ROHet_tabla.xlsx", as.table=TRUE)
+
 consecutiveRuns_het <- consecutiveRUNS.run(
   genotypeFile =genotypeFilePath,
   mapFile = mapFilePath,
   minSNP = 10,
-  ROHet = TRUE,
+  ROHet = FALSE,
   maxGap = 10^6,
   minLengthBps = 10000,
   maxOppRun = 2,
@@ -92,88 +103,107 @@ consecutiveRuns_het <- consecutiveRUNS.run(
 
 summaryList <- summaryRuns(
   runs = slidingRuns, mapFile = mapFilePath, genotypeFile = genotypeFilePath, 
-  Class =6 , snpInRuns = TRUE)
+  Class =2 , snpInRuns = TRUE)
 
+#Exportar tabla summary List
+library(openxlsx)
+write.xlsx(summaryList, "summaryList.xlsx")
+
+#SUMARIO DE ROH
+summaryList
+summaryList$summary_ROH_count
+
+summaryList$summary_ROH_mean_chr
+
+## PARA CALCULAR LA LONGITUD MEDIA DE ROH POR CATEGORIAS
+## Load necessary libraries
+library(dplyr)
+library(readxl)
+
+# Read the data (adjust the path to your file)
+data <- read_excel("ROHom1.xlsx")
+
+# Convert length from bps to Mb
+data$lengthMb <- data$lengthBps / 1000000
+
+# Define the categories
+bins <- c(0, 2, 4, 8, 16, Inf)
+labels <- c('0-2 Mb', '2-4 Mb', '4-8 Mb', '8-16 Mb', '>16 Mb')
+
+# Categorize the data
+data$length_category <- cut(data$lengthMb, breaks = bins, labels = labels, right = FALSE)
+
+# Group by population and length category, then calculate the mean
+grouped_data <- data %>%
+  group_by(group, length_category) %>%
+  summarize(mean_length_Mb = mean(lengthMb))
+
+## Print the results
+print(grouped_data)
+
+write.xlsx(grouped_data, "processed_ROH_data.xlsx")
+
+
+#Exportar tabla tablaROHmean
+summaryList$summary_ROH_mean_class
+tablaROHmean<-summaryList$summary_ROH_mean_class
+library(openxlsx)
+write.xlsx(tablaROHmean, "tablaROHmean.xlsx")
+
+summaryList$result_Froh_class
+
+
+#Exportar tabla tablaFrohClass
+tablaFrohClass <-summaryList$result_Froh_class
+library(openxlsx)
+write.xlsx(tablaFrohClass, "Froh_class.xlsx")
+
+summaryList$SNPinRun
 
 head(summaryList$SNPinRun)
+
+
+
 
 plot_Runs(runs = slidingRuns)
 plot_StackedRuns(runs = slidingRuns)
 
+#POR RAZA
 plot_SnpsInRuns(
-  runs = slidingRuns[slidingRuns$chrom==2,], genotypeFile = genotypeFilePath, 
+  runs = slidingRuns[slidingRuns$group=="GUY",], genotypeFile = genotypeFilePath, 
   mapFile = mapFilePath)
 
 plot_SnpsInRuns(
-  runs = slidingRuns[slidingRuns$chrom==24,], genotypeFile = genotypeFilePath, 
+  runs = slidingRuns[slidingRuns$chrom==29,], genotypeFile = genotypeFilePath, 
   mapFile = mapFilePath)
 
 topRuns <- tableRuns(
   runs =  slidingRuns, genotypeFile = genotypeFilePath, mapFile = mapFilePath, 
-  threshold = 0.5)
+  threshold = 0.2)
 
+#Exportar tabla topRuns
+library(openxlsx)
+write.xlsx(topRuns, "topRuns3.xlsx")
+
+#MANHATTAN PLOT %SNP POR CROMOSOMA DE RAZAS
 plot_manhattanRuns(
-  runs = slidingRuns[slidingRuns$group=="GUY",], 
+  runs = slidingRuns[slidingRuns$group=="GUA",], 
   genotypeFile = genotypeFilePath, mapFile = mapFilePath)
-
-# getting map and ped paths
-
-genotypeFilePath <- system.file(
-  "extdata", "criolloQC.ped", package="detectRUNS")
-
-mapFilePath <- system.file(
-  "extdata", "criolloQC.map", package="detectRUNS")
-
-# calculating runs of Homozygosity
-## Not run: 
-# skipping runs calculation
-slidingRuns_het <- slidingRUNS.run(
-  genotypeFile = genotypeFilePath, 
-  mapFile = mapFilePath, 
-  windowSize = 10, 
-  threshold = 0.05,
-  minSNP = 10, 
-  ROHet = FALSE, 
-  maxOppWindow = 2, 
-  maxMissWindow = 1,
-  maxGap = 10^6, 
-  minLengthBps = 10000, 
-  minDensity = 1/10^6, # SNP/kbps
-  maxOppRun = NULL,
-  maxMissRun = NULL
-) 
-
-consecutiveRuns_het <- consecutiveRUNS.run(
-  genotypeFile =genotypeFilePath,
-  mapFile = mapFilePath,
-  minSNP = 10,
-  ROHet = FALSE,
-  maxGap = 10^6,
-  minLengthBps = 10000,
-  maxOppRun = 2,
-  maxMissRun = 1
-)
+ 
 
 ## End(Not run)
 # loading pre-calculated data
 runsFile <- system.file("extdata", "sliding.criollo.csv", package="detectRUNS")
 runsDF <- readExternalRuns(inputFile = runsFile, program = 'detectRUNS')
 
-#Graficar "ChrBarPlot", "ChrBoxPlot" o "FrohBoxPlot"
-plot_InbreedingChr(runs = runsDF, mapFile = mapFilePath, style='ALL')
+#GraficaS TIPO "ChrBarPlot", "ChrBoxPlot" o "FrohBoxPlot"
+plot_InbreedingChr(runs = runsDF, mapFile = mapFilePath, style='ChrBarPlot')
 
 #TABULACION DE FROH POR CROMOSOMA Y POR INDIVIDUO
-Froh_inbreeding(runs =runsDF, mapFile=mapFilePath, genome_wide = FALSE)
+Froh_inbreeding(runs =runsDF, mapFile=mapFilePath, genome_wide = TRUE)
 
 #EXPORTACION A TABLA XLSX
 library(openxlsx)
 sliding.criollo <- slidingRuns
-
 write.xlsx(sliding.criollo, "sliding.criollo.xlsx")
-
 write.xlsx(sliding.criollo, "sliding.criollo_tabla.xlsx", as.table=TRUE)
-
-
-
-
-
